@@ -256,7 +256,9 @@ public class GlyphList extends JComponent implements Scrollable {
 				if (font.containsCharacter(cp)) {
 					if (sel.contains(i)) g.setColor(SystemColor.textHighlightText);
 					FontGlyph glyph = font.getCharacter(cp);
-					double gx = Math.round((x1 + x2 - glyph.getCharacterWidth2D() * scale) / 2);
+					// getGlyphOffset2D is counted twice because it's also added by the glyph's paint method.
+					double glyphXOffset = glyph.getGlyphWidth2D() + glyph.getGlyphOffset2D() * 2;
+					double gx = Math.round((x1 + x2 - glyphXOffset * scale) / 2);
 					double gy = Math.round(y + LABEL_HEIGHT + 2 + ascent);
 					glyph.paint(g, gx, gy, scale);
 				} else {
