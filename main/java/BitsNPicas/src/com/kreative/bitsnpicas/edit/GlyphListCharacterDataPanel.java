@@ -29,11 +29,17 @@ public class GlyphListCharacterDataPanel extends JPanel implements GlyphListList
 		List<Integer> cps = gl.getSelectedCodePoints();
 		if (cps.size() == 1) {
 			int codePoint = cps.get(0);
-			String h = Integer.toHexString(codePoint).toUpperCase();
-			while (h.length() < 4) h = "0" + h;
-			String s = "U+" + h + "    #" + codePoint;
-			CharacterData cd = cdb.get(codePoint);
-			if (cd != null) s += "    " + cd.category + "    " + cd;
+			String s;
+			if (codePoint >= 0) {
+				String h = Integer.toHexString(codePoint).toUpperCase();
+				while (h.length() < 4) h = "0" + h;
+				s = "U+" + h + "    #" + codePoint;
+				CharacterData cd = cdb.get(codePoint);
+				if (cd != null) s += "    " + cd.category + "    " + cd;
+			} else {
+				s = font.getUnencodedName(codePoint) + " (UNENCODED)";
+			}
+
 			label.setText(s);
 		} else if (cps.size() > 1) {
 			label.setText(cps.size() + " characters selected");

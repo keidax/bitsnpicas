@@ -35,7 +35,7 @@ public class PostTableEntry {
 			case 0x00aa: return new PostTableEntry(157);
 			case 0x00ab: return new PostTableEntry(169);
 			case 0x00ac: return new PostTableEntry(164);
-			case 0x00ad: return new PostTableEntry("hyphen");
+			case 0x00ad: return new PostTableEntry("uni00AD");
 			case 0x00ae: return new PostTableEntry(138);
 			case 0x00af: return new PostTableEntry(218);
 			case 0x00b0: return new PostTableEntry(131);
@@ -45,7 +45,7 @@ public class PostTableEntry {
 			case 0x00b4: return new PostTableEntry(141);
 			case 0x00b5: return new PostTableEntry(151);
 			case 0x00b6: return new PostTableEntry(136);
-			case 0x00b7: return new PostTableEntry("periodcentered");
+			case 0x00b7: return new PostTableEntry(195);
 			case 0x00b8: return new PostTableEntry(222);
 			case 0x00b9: return new PostTableEntry(241);
 			case 0x00ba: return new PostTableEntry(158);
@@ -315,7 +315,7 @@ public class PostTableEntry {
 			case 0x03b9: return new PostTableEntry("iota");
 			case 0x03ba: return new PostTableEntry("kappa");
 			case 0x03bb: return new PostTableEntry("lambda");
-			case 0x03bc: return new PostTableEntry("mu");
+			case 0x03bc: return new PostTableEntry("uni03BC");
 			case 0x03bd: return new PostTableEntry("nu");
 			case 0x03be: return new PostTableEntry("xi");
 			case 0x03bf: return new PostTableEntry("omicron");
@@ -849,7 +849,10 @@ public class PostTableEntry {
 		else if (name.equals("Ccaron")) return new PostTableEntry(255);
 		else if (name.equals("ccaron")) return new PostTableEntry(256);
 		else if (name.equals("dcroat")) return new PostTableEntry(257);
-		else return new PostTableEntry(name);
+		else {
+			System.out.println(name);
+			return new PostTableEntry(name);
+		}
 	}
 	
 	public boolean isInteger() {

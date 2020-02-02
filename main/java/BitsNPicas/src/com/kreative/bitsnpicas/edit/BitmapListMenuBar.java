@@ -284,6 +284,7 @@ public class BitmapListMenuBar extends JMenuBar {
 							if (!result.relative) index -= start;
 							if (index < 0 || index >= limit) continue;
 							int cp = codePointList.get(index);
+							// here
 							if (cp < 0 || cp >= 0x110000) continue;
 							font.putCharacter(cp, glyph);
 							newSel.add(index);

@@ -1,49 +1,32 @@
 package com.kreative.bitsnpicas.exporter;
 
-import java.awt.Rectangle;
+import com.kreative.bitsnpicas.*;
+import com.kreative.bitsnpicas.Font;
+import com.kreative.bitsnpicas.truetype.*;
+import org.w3c.dom.css.Rect;
+
+import java.awt.*;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.List;
 import java.util.*;
 
-import com.kreative.bitsnpicas.BitmapFont;
-import com.kreative.bitsnpicas.BitmapFontExporter;
-import com.kreative.bitsnpicas.Font;
-import com.kreative.bitsnpicas.PathGraph;
-import com.kreative.bitsnpicas.truetype.CmapSubtableFormat12;
-import com.kreative.bitsnpicas.truetype.CmapSubtableFormat4;
-import com.kreative.bitsnpicas.truetype.CmapSubtableSequentialEntry;
-import com.kreative.bitsnpicas.truetype.CmapTable;
-import com.kreative.bitsnpicas.truetype.CmapTableEntry;
-import com.kreative.bitsnpicas.truetype.GlyfTable;
-import com.kreative.bitsnpicas.truetype.HeadTable;
-import com.kreative.bitsnpicas.truetype.HheaTable;
-import com.kreative.bitsnpicas.truetype.HmtxTable;
-import com.kreative.bitsnpicas.truetype.HmtxTableEntry;
-import com.kreative.bitsnpicas.truetype.LocaTable;
-import com.kreative.bitsnpicas.truetype.MaxpTable;
-import com.kreative.bitsnpicas.truetype.NameTable;
-import com.kreative.bitsnpicas.truetype.NameTableEntry;
-import com.kreative.bitsnpicas.truetype.Os2Table;
-import com.kreative.bitsnpicas.truetype.PostTable;
-import com.kreative.bitsnpicas.truetype.PostTableEntry;
-import com.kreative.bitsnpicas.truetype.TrueTypeFile;
-
-public class TTFBitmapFontExporter implements BitmapFontExporter {
+public class TTFSbitBitmapFontExporter implements BitmapFontExporter {
 	private int xsize, ysize;
 	
-	public TTFBitmapFontExporter() {
+	public TTFSbitBitmapFontExporter() {
 		this.xsize = 100;
 		this.ysize = 100;
 	}
 	
-	public TTFBitmapFontExporter(int size) {
+	public TTFSbitBitmapFontExporter(int size) {
 		this.xsize = size;
 		this.ysize = size;
 	}
 	
-	public TTFBitmapFontExporter(int xsize, int ysize) {
+	public TTFSbitBitmapFontExporter(int xsize, int ysize) {
 		this.xsize = xsize;
 		this.ysize = ysize;
 	}
@@ -92,11 +75,18 @@ public class TTFBitmapFontExporter implements BitmapFontExporter {
 		LocaTable locaTable = new LocaTable();
 		HmtxTable hmtxTable = new HmtxTable();
 		PostTable postTable = new PostTable();
+		
+		EbdtTable ebdtTable = new EbdtTable(SbitTableType.OPENTYPE);
+		EblcTable eblcTable = new EblcTable(SbitTableType.OPENTYPE);
+		EblcBitmapSize strike = new EblcBitmapSize();
+		eblcTable.add(strike);
+		
+		
+		
 		if (bf.isItalicStyle()) postTable.italicAngle = PostTable.ITALIC_ANGLE_ISOMETRIC;
 		postTable.underlinePosition = -ysize;
 		postTable.underlineThickness = ysize;
 		
-		int[] predefChars = new int[]{ -1, 0x00, 0x0D, 0x20 };
 		List<Integer> chars = new ArrayList<Integer>();
 		Iterator<Integer> cpi = bf.codePointIterator();
 		while (cpi.hasNext()) chars.add(cpi.next());
@@ -116,23 +106,46 @@ public class TTFBitmapFontExporter implements BitmapFontExporter {
 				}
 			}
 		});
-		for (int ch : predefChars) {
-			if (bf.containsCharacter(ch)) {
-				makeCharacterGlyph(bf, ch, a, xsize, ysize, glyfTable, locaTable, hmtxTable, postTable);
-				chars.remove((Integer)ch);
-			} else {
-				a.charToGlyfMap.put(ch, a.numGlyphs);
-				locaTable.add(a.currentLocation);
-				hmtxTable.add(new HmtxTableEntry());
-				postTable.add(PostTableEntry.forCharacter(ch));
-				a.numGlyphs++;
-			}
-		}
-		for (int ch : chars) {
-			makeCharacterGlyph(bf, ch, a, xsize, ysize, glyfTable, locaTable, hmtxTable, postTable);
-		}
-		locaTable.add(a.currentLocation);
 		
+		// Add single undefined glyph
+        int undefined = -1;
+		a.charToGlyfMap.put(undefined, a.numGlyphs);
+		locaTable.add(a.currentLocation);
+		hmtxTable.add(new HmtxTableEntry());
+		postTable.add(PostTableEntry.forCharacter(undefined));
+		a.numGlyphs++;
+		
+		for (int ch : chars) {
+			makeCharacterSbit(bf, ch, a, xsize, ysize, ebdtTable, strike, hmtxTable, postTable);
+		}
+		
+		EblcIndexSubtable1 subtable = (EblcIndexSubtable1) strike.get(strike.size() - 1);
+		// add last padding entry
+		subtable.add(ebdtTable.getNextKey());
+		
+		strike.startGlyphIndex = 1;
+		strike.endGlyphIndex = a.numGlyphs-1;
+		int ppem = bf.getEmAscent() + bf.getEmDescent();
+		strike.ppemX = strike.ppemY = ppem;
+		strike.bitDepth = 1;
+		strike.flags = 1;
+
+		strike.hori = new SbitLineMetrics();
+		strike.vert = new SbitLineMetrics();
+		
+		strike.hori.ascender = bf.getEmAscent();
+		strike.hori.descender = -bf.getLineDescent();
+		
+		// TODO:
+		strike.hori.widthMax = 26;
+		strike.hori.minOriginSB = -20;
+		strike.hori.minAdvanceSB = -1;
+		strike.hori.maxBeforeBL = 14;
+		strike.hori.minAfterBL = -5;
+		
+		
+		// ebdtTable.recalculate(eblcTable);
+
 		TrueTypeFile ttf = new TrueTypeFile();
 		ttf.add(makeHeadTable(bf, a, ysize));
 		ttf.add(makeHheaTable(bf, a, ysize));
@@ -144,21 +157,23 @@ public class TTFBitmapFontExporter implements BitmapFontExporter {
 		ttf.add(glyfTable);
 		ttf.add(makeNameTable(bf));
 		ttf.add(postTable);
+		ttf.add(ebdtTable);
+		ttf.add(eblcTable);
 		return ttf;
 	}
 	
-	private static final void makeCharacterGlyph(
+	private static final void makeCharacterSbit(
 		BitmapFont bf, int ch, ThingsToKeepTrackOf a, int xsize, int ysize,
-		GlyfTable glyfTable, LocaTable locaTable, HmtxTable hmtxTable, PostTable postTable
+		EbdtTable ebdtTable, EblcBitmapSize strike, HmtxTable hmtxTable, PostTable postTable
 	) {
-		PathGraph pg = bf.getCharacter(ch).convertToPathGraph(xsize, ysize);
-		pg.removeOverlap(); pg.simplifyPaths();
-		PathGraph.ImmutablePoint[][] contours = pg.getContours();
-		int pc = 0; for (PathGraph.ImmutablePoint[] contour : contours) pc += contour.length - 1;
-		Rectangle r = pg.getBoundingRect();
+		BitmapFontGlyph bg = bf.getCharacter(ch);
+		Rectangle r = new Rectangle(
+				bg.getGlyphOffset() * xsize,
+				-bg.getGlyphDescent() * ysize,
+				bg.getGlyphWidth() * xsize, 
+				bg.getGlyphHeight() * ysize
+		);
 		int advance = bf.getCharacter(ch).getCharacterWidth() * xsize;
-		if (a.maxContours < contours.length) a.maxContours = contours.length;
-		if (a.maxPoints < pc) a.maxPoints = pc;
 		if (!a.maxBoundingBox) {
 			a.maxBoundingBox = true;
 			a.bbx1 = r.x; a.bby1 = r.y; a.bbx2 = r.x+r.width; a.bby2 = r.y+r.height;
@@ -179,17 +194,63 @@ public class TTFBitmapFontExporter implements BitmapFontExporter {
 		if (ch == 'H') a.HHeight = r.y+r.height;
 		if (ch >= 0x10000) a.highUnicode = true;
 		a.charToGlyfMap.put(ch, a.numGlyphs);
-		byte[] glyf = ((contours.length == 0) ? new byte[0] : pg.getGlyfData());
-		glyfTable.add(glyf);
-		locaTable.add(a.currentLocation);
 		hmtxTable.add(new HmtxTableEntry(advance, r.x));
+		
+		EbdtEntryFormat1 entry = new EbdtEntryFormat1();
+		int bytesPerRow = (int) Math.ceil(bg.getGlyphWidth2D() / 8);
+		int totalBytes = bytesPerRow * bg.getGlyphHeight();
+		byte[] data = new byte[totalBytes];
+		int i = 0;
+		for (byte[] row : bg.getGlyph()) {
+			for (int col = 0; col < row.length; col += 8) {
+				byte outByte = 0;
+				for (int c = 0; c < 8; c++) {
+					outByte <<= 1;
+					if (col+c < row.length && row[col+c] < 0) { // NOTE: < 0 comparison is for signed byte
+						outByte |= 1;
+					}
+				}
+				data[i++] = outByte;
+			}
+		}
+		entry.imageData = data;
+		
+		SbitSmallGlyphMetrics metrics = new SbitSmallGlyphMetrics();
+		entry.smallMetrics = metrics;
+		metrics.height = bg.getGlyphHeight();
+		metrics.width = bg.getGlyphWidth();
+		metrics.advance = bg.getCharacterWidth();
+		metrics.bearingX = bg.getGlyphOffset();
+		metrics.bearingY = bg.getGlyphAscent();
+		
+		
+		EblcIndexSubtable1 subtable;
+		if (strike.size() == 0) {
+			subtable = new EblcIndexSubtable1();
+			subtable.header = new EblcIndexSubtableHeader();
+			subtable.header.firstGlyphIndex = a.numGlyphs;
+			subtable.header.lastGlyphIndex = a.numGlyphs;
+			subtable.header.indexFormat = 1;
+			subtable.header.imageFormat = entry.format();
+			strike.add(subtable);
+		} else {
+			subtable = (EblcIndexSubtable1) strike.get(strike.size() - 1);
+			subtable.header.lastGlyphIndex = a.numGlyphs;
+		}
+		
+		int entryOffset = ebdtTable.getNextKey();
+//		if (entryOffset % 4 != 0) {
+//			entryOffset += (4 - entryOffset % 4);
+//		}
+		subtable.add(entryOffset);
+		ebdtTable.put(entryOffset, entry);
+
 		// here
 		if (ch < 0) {
 			postTable.add(PostTableEntry.forCharacterName(bf.getUnencodedName(ch)));
 		} else {
 			postTable.add(PostTableEntry.forCharacter(ch));
 		}
-		a.currentLocation += glyf.length;
 		a.numGlyphs++;
 	}
 	
@@ -270,7 +331,7 @@ public class TTFBitmapFontExporter implements BitmapFontExporter {
 		headTable.macStyle = bf.getMacStyle();
 		// here? fontforge has a different value
 		headTable.lowestRecPPEM = bf.getEmAscent() + bf.getEmDescent();
-		headTable.fontDirectionHint = HeadTable.FONT_DIRECTION_HINT_MIXED;
+		headTable.fontDirectionHint = HeadTable.FONT_DIRECTION_HINT_LTR_WITH_NEUTRAL;
 		headTable.indexToLocFormat = HeadTable.INDEX_TO_LOC_FORMAT_LONG;
 		return headTable;
 	}

@@ -1,11 +1,7 @@
 package com.kreative.bitsnpicas.edit;
 
-import java.util.AbstractList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
+import java.util.*;
+
 import com.kreative.bitsnpicas.Font;
 
 public class FontCodePointList extends AbstractList<Integer> {
@@ -17,7 +13,23 @@ public class FontCodePointList extends AbstractList<Integer> {
 	
 	private List<Integer> codePoints() {
 		List<Integer> arr = font.codePointList();
-		Collections.sort(arr);
+		Collections.sort(arr, new Comparator<Integer>() {
+			@Override
+			// Sort negative codepoints (unencoded glyphs) after positive ones and in reverse order.
+			public int compare(Integer codepoint1, Integer codepoint2) {
+				if (codepoint1 < 0 && codepoint2 >= 0) {
+					return 1;
+				} else if (codepoint2 < 0 && codepoint1 >= 0) {
+					return -1;
+				} else if (codepoint1 >= 0) {
+					return codepoint1.compareTo(codepoint2);
+				} else {
+					// they must both be negative, flip the order
+					return codepoint2.compareTo(codepoint1);
+				}
+			}
+		});
+
 		return arr;
 	}
 	

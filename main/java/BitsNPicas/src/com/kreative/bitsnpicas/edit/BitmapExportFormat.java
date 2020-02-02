@@ -5,24 +5,19 @@ import java.io.File;
 import java.io.IOException;
 import com.kreative.bitsnpicas.BitmapFontExporter;
 import com.kreative.bitsnpicas.MacUtility;
-import com.kreative.bitsnpicas.exporter.BDFBitmapFontExporter;
-import com.kreative.bitsnpicas.exporter.FZXBitmapFontExporter;
-import com.kreative.bitsnpicas.exporter.GEOSBitmapFontExporter;
-import com.kreative.bitsnpicas.exporter.HMZKBitmapFontExporter;
-import com.kreative.bitsnpicas.exporter.HexBitmapFontExporter;
-import com.kreative.bitsnpicas.exporter.NFNTBitmapFontExporter;
-import com.kreative.bitsnpicas.exporter.RFontBitmapFontExporter;
-import com.kreative.bitsnpicas.exporter.SBFBitmapFontExporter;
-import com.kreative.bitsnpicas.exporter.SFontBitmapFontExporter;
-import com.kreative.bitsnpicas.exporter.TOSBitmapFontExporter;
-import com.kreative.bitsnpicas.exporter.TTFBitmapFontExporter;
-import com.kreative.bitsnpicas.exporter.U8MBitmapFontExporter;
+import com.kreative.bitsnpicas.exporter.*;
 
 public enum BitmapExportFormat {
 	TTF("TTF (TrueType)", ".ttf", "pixel") {
 		public BitmapFontExporter createExporter(BitmapExportOptions o) {
 			Dimension d = o.getPixelDimension();
 			return new TTFBitmapFontExporter(d.width, d.height);
+		}
+	},
+	TTF_SBIT("TTF (Embedded Bitmap)", ".ttf", "pixel") {
+		public BitmapFontExporter createExporter(BitmapExportOptions o) {
+			Dimension d = o.getPixelDimension();
+			return new TTFSbitBitmapFontExporter(d.width, d.height);
 		}
 	},
 	BDF("BDF (Bitmap Distribution Format)", ".bdf", "none") {

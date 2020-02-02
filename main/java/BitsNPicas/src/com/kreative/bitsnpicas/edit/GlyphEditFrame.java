@@ -25,15 +25,19 @@ public class GlyphEditFrame extends JFrame {
 	}
 	
 	public static String getTitle(Font<?> font, int codePoint) {
-		return characterName(codePoint) + " from " + font.toString();
+		return characterName(codePoint, font) + " from " + font.toString();
 	}
 	
-	private static String characterName(int codePoint) {
-		CharacterDatabase cdb = CharacterDatabase.instance();
-		String h = Integer.toHexString(codePoint).toUpperCase();
-		while (h.length() < 4) h = "0" + h;
-		CharacterData cd = cdb.get(codePoint);
-		if (cd != null) h += " " + cd.toString();
-		return "U+" + h;
+	private static String characterName(int codePoint, Font<?> font) {
+		if (codePoint >= 0) {
+			CharacterDatabase cdb = CharacterDatabase.instance();
+			String h = Integer.toHexString(codePoint).toUpperCase();
+			while (h.length() < 4) h = "0" + h;
+			CharacterData cd = cdb.get(codePoint);
+			if (cd != null) h += " " + cd.toString();
+			return "U+" + h;
+		} else {
+			return font.getUnencodedName(codePoint) + " (UNENCODED)";
+		}
 	}
 }

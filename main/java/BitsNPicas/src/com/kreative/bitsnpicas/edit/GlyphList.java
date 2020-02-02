@@ -173,7 +173,7 @@ public class GlyphList extends JComponent implements Scrollable {
 		List<Integer> cps = new ArrayList<Integer>();
 		for (int i : selection.toSet()) {
 			int cp = codePoints.get(i);
-			if (cp >= 0) cps.add(cp);
+			cps.add(cp);
 		}
 		return cps;
 	}
@@ -229,7 +229,7 @@ public class GlyphList extends JComponent implements Scrollable {
 			int y = insets.top + (cellSize + LABEL_HEIGHT) * (i / columnCount);
 			if (vr.intersects(x1, y, x2 - x1 + 1, cellSize + LABEL_HEIGHT + 1)) {
 				int cp = codePoints.get(i);
-				if (cp < 0) continue;
+				// if (cp < 0) continue;
 				g.setColor(Color.black);
 				g.fillRect(x1, y, x2 - x1 + 1, cellSize + LABEL_HEIGHT + 1);
 				g.setColor(Color.gray);
@@ -240,7 +240,7 @@ public class GlyphList extends JComponent implements Scrollable {
 				g.fillRect(x1 + 1, y + LABEL_HEIGHT + 1, x2 - x1 - 1, cellSize - 1);
 				g.setColor(SystemColor.textText);
 				String cps = getCharacterLabel(cp);
-				if (HEX_FONT == null || cps.length() < 4) {
+				if (HEX_FONT == null || cps.length() < 4 || cp < 0) {
 					FontMetrics fm = g.getFontMetrics();
 					int cpsx = (x1 + x2 - fm.stringWidth(cps) + 1) / 2;
 					int cpsy = y + (LABEL_HEIGHT - fm.getHeight()) / 2 + fm.getAscent();
@@ -298,6 +298,13 @@ public class GlyphList extends JComponent implements Scrollable {
 	}
 	
 	private String getCharacterLabel(int cp) {
+		if (cp < 0) {
+			String name = font.getUnencodedName(cp);
+			if (name != null) {
+				System.out.println(name);
+				return name;
+			}
+		}
 		if (cdb.containsKey(cp)) {
 			String c = cdb.get(cp).category;
 			if (!(

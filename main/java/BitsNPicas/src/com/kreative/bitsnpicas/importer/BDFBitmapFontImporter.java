@@ -49,7 +49,13 @@ public class BDFBitmapFontImporter implements BitmapFontImporter {
 		Charset cs = null;
 		while (scan.hasNextLine()) {
 			String[] kv = scan.nextLine().trim().split("\\s+", 2);
-			if (kv[0].equals("STARTCHAR")) readChar(scan, bm, cs);
+			if (kv[0].equals("STARTCHAR")) {
+				String charName;
+				if (kv.length == 2) charName = kv[1];
+				else charName = "Unknown"; // Technically malformed
+
+				readChar(scan, bm, cs, charName);
+			}
 			else if (kv[0].equals("ENDFONT")) break;
 			else if (kv.length < 2) continue;
 			else if (kv[0].equals("FAMILY_NAME")) bm.setName(Font.NAME_FAMILY, dequote(kv[1]));
@@ -102,9 +108,10 @@ public class BDFBitmapFontImporter implements BitmapFontImporter {
 		return bm;
 	}
 	
-	private void readChar(Scanner scan, BitmapFont bm, Charset cs) throws IOException {
+	private void readChar(Scanner scan, BitmapFont bm, Charset cs, String charName) throws IOException {
 		BitmapFontGlyph g = new BitmapFontGlyph();
 		int encoding = -1;
+		boolean isUnencodedChar = false;
 		while (scan.hasNextLine()) {
 			String[] kv = scan.nextLine().trim().split("\\s+", 2);
 			if (kv[0].equals("BITMAP")) { if (readBitmap(scan, g)) break; }
@@ -113,7 +120,9 @@ public class BDFBitmapFontImporter implements BitmapFontImporter {
 			else if (kv[0].equals("ENCODING")) {
 				try {
 					encoding = Integer.parseInt(dequote(kv[1]));
-					if (cs == FONT_SPECIFIC) encoding += 0xF000;
+					// here
+					if (cs == FONT_SPECIFIC) isUnencodedChar = true;
+					else if (encoding == -1) isUnencodedChar = true;
 					else if (cs != null) {
 						String es = new String(toByteArray(encoding), cs);
 						if (es.codePointCount(0, es.length()) == 1) {
@@ -147,6 +156,10 @@ public class BDFBitmapFontImporter implements BitmapFontImporter {
 			}
 		}
 		if (encoding >= 0) bm.putCharacter(encoding, g);
+		else if (isUnencodedChar) {
+			System.out.println(charName);
+			bm.putUnencodedCharacter(charName, g);
+		}
 	}
 	
 	private boolean readBitmap(Scanner scan, BitmapFontGlyph g) {

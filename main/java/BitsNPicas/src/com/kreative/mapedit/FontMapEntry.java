@@ -22,6 +22,7 @@ public class FontMapEntry {
 	public String getCodePointsString() {
 		int[] lastRange = null;
 		List<int[]> ranges = new ArrayList<int[]>();
+		// here?
 		for (int i = 0; (i = codePoints.nextSetBit(i)) >= 0; i++) {
 			if (lastRange != null && lastRange[1] == (i - 1)) lastRange[1]++;
 			else ranges.add(lastRange = new int[]{i, i});

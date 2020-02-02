@@ -45,6 +45,10 @@ public abstract class Font<T extends FontGlyph> {
 	
 	protected Map<Integer,String> names = new HashMap<Integer,String>();
 	protected Map<Integer,T> characters = new HashMap<Integer,T>();
+	// "Unencoded" glyphs are represented as negative integers.
+	// They also can have custom names.
+	protected Map<Integer,String> unencodedNames = new HashMap<Integer,String>();
+	protected Integer nextUnencoded = -2;
 
 	private final List<FontListener> listeners = new ArrayList<FontListener>();
 	
@@ -90,6 +94,16 @@ public abstract class Font<T extends FontGlyph> {
 	
 	public T putCharacter(int ch, T fc) {
 		return characters.put(ch, fc);
+	}
+
+	public T putUnencodedCharacter(String name, T fc) {
+		int ch = nextUnencoded--;
+		unencodedNames.put(ch, name);
+		return characters.put(ch, fc);
+	}
+
+	public String getUnencodedName(int ch) {
+		return unencodedNames.get(ch);
 	}
 	
 	public T removeCharacter(int ch) {
